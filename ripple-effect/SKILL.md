@@ -1,546 +1,782 @@
 ---
 name: "ripple-effect"
-version: "3.0"
-description: "Systematically prevent dependency chain breakage from code changes, covering code references, data flows, API contracts, configuration dependencies, and frontend-backend consistency to ensure all affected layers are synchronized when modifying A."
+version: "5.0"
+description: "Analyzes code changes for ripple effects across references, data flows, and contracts. Provides structured risk assessment, multi-option recommendations, and waits for explicit approval before any execution."
 author: "wechat: Anonymvs1234"
 ---
 
-# RippleEffect Skill
+# RippleEffect Skill v5.0
 
-## Activation Conditions
+## Executive Summary
 
-This skill activates automatically when:
-- Modifying any code file (frontend, backend, configuration, type definitions)
-- Modifying data structures, type definitions, interface contracts
-- Modifying API endpoints, request/response formats
-- Modifying configuration files, environment variables
-- Modifying data processing logic, calculation rules
-- Modifying frontend-backend communication code
+RippleEffect is an **intelligent impact analysis assistant** that helps you understand the full scope of code changes before execution.
 
-## Core Principles
+**Core Philosophy**: 
+- Analyze first, execute never without approval
+- Provide options, not prescriptions  
+- Assess risk, not just impact
+- Enable informed decisions, not automate them
 
-### Principle1: Multi-Dimensional Dependency Analysis
-Single-dimensional analysis is insufficient; must cover:
-- **Code Reference Dependencies** - Who calls this function/class
-- **Data Flow Dependencies** - Who consumes this data's output
-- **Contract Dependencies** - Who depends on this interface format
-- **Configuration Dependencies** - Who uses this configuration
-- **Implicit Dependencies** - B doesn't import A but depends on A's output format/behavior
+---
 
-### Principle2: Think Once, Cover Everything
-- **Forbidden**: Only look at code references, ignore data flows and contracts
-- **Required**: Understand the complete dependency network
-- **Output**: Complete list of all affected layers
+## When to Use
 
-### Principle3: Synchronize Changes or Evaluate Alternatives
-- Option A: When modifying A, synchronize changes to all affected layers
-- Option B: If impact is too large, evaluate better architecture options
+### ✅ Appropriate Use Cases
 
-## Multi-Dimensional Dependency Analysis Framework
+| Scenario | Example |
+|----------|---------|
+| Modify shared types/interfaces | Adding field to User model |
+| Change function signatures | Renaming parameters, changing return type |
+| Update API contracts | Modifying request/response formats |
+| Refactor widely-used utilities | Changing core helper functions |
+| Frontend-backend consistency checks | Adding new form fields |
+| Assess migration complexity | "How risky is this refactor?" |
 
-### Dimension1: Code Reference Dependencies (Existing)
+### ❌ Inappropriate Use Cases
 
-```
-Analysis Target: Functions, classes, variables, modules
-Analysis Method: lsp_find_references, grep import
-Output: Direct callers, indirect callers
-```
+| Scenario | Reason |
+|----------|--------|
+| Simple variable renames in local scope | No ripple effect |
+| Documentation-only changes | No code impact |
+| One-line typo fixes | Trivial change |
+| Adding console.log statements | No structural impact |
+| Dead code removal | Verify no references first |
 
-### Dimension2: Data Flow Dependencies (New)
+### 🎯 Smart Activation Triggers
 
-```
-Analysis Target: Data producer → Data consumer
-Analysis Method:
-- Track data flow: From data production to final consumption
-- Identify implicit dependencies: B doesn't import A but uses A's output
-- Check serialization/deserialization: JSON, ProtoBuf, FormData, etc.
+You should consider using this skill when the user says:
+- "I want to modify..."
+- "I need to change..."
+- "Can I rename..."
+- "What happens if I update..."
+- "How risky is it to..."
+- "What's the impact of..."
+- "I need to refactor..."
+- "Help me understand the dependencies of..."
 
-Output: Data flow diagram
-```
+---
 
-**Example Scenario**:
-```
-A: UserSerializer.toJSON()  // Produces user data
-B: AnalyticsService.process()  // Consumes user data but doesn't directly import UserSerializer
-C: ReportGenerator.export()    // Gets data from AnalyticsService
+## Interaction Protocol
 
-Modify A's toJSON() output fields → B and C's processing logic may break
-```
-
-### Dimension3: Contract Dependencies (New)
-
-```
-Analysis Target: API interfaces, data formats, type definitions
-Analysis Method:
-- API Contracts: OpenAPI/Swagger docs, route definitions
-- Data Formats: TypeScript interfaces, Python dataclass, database Schema
-- Message Formats: Event messages, Queue messages, WebSocket messages
-
-Output: Contract dependency graph
-```
-
-**Example Scenario**:
-```
-Frontend: POST /api/user { name, email, phone }
-Backend: UserController.create(req.body)
-
-Frontend adds phone field → Backend DTO missing → 500 error
-```
-
-### Dimension4: Configuration Dependencies (Existing but Enhanced)
-
-```
-Analysis Target: Config files, environment variables, Feature Flags
-Analysis Method:
-- grep config key names
-- Track config usage locations
-- Identify impact chains of config changes
-
-Output: Configuration impact scope
-```
-
-### Dimension5: Frontend-Backend Consistency (New Core)
-
-```
-Analysis Target: All layers of frontend-backend interaction
-Analysis Method:
-1. API Route Consistency
-   - Frontend request paths vs backend route definitions
-   - HTTP method consistency
-   
-2. Request/Response Format Consistency
-   - Frontend request body format vs backend DTO definitions
-   - Backend response format vs frontend type definitions
-   
-3. Status Code/Error Handling Consistency
-   - Backend returned error codes vs frontend handled error codes
-   
-4. Business Logic Consistency
-   - Frontend validation rules vs backend validation rules
-   - Frontend calculation logic vs backend calculation logic
-
-Output: Frontend↔Backend consistency check report
-```
-
-## Operational Flow
-
-### Phase1: Multi-Dimensional Dependency Scanning
+### Conversation States
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│ Step1: Locate Modification Target                                │
-├─────────────────────────────────────────────────────────────────┤
-│ • File path + code location                                      │
-│ • Modification type: function/class/type/config/API/data format │
-│ • Change nature: add/delete/modify                              │
-└─────────────────────────────────────────────────────────────────┘
-
-┌─────────────────────────────────────────────────────────────────┐
-│ Step2: Multi-Dimensional Dependency Scanning                     │
+│                     RippleEffect State Machine                   │
 ├─────────────────────────────────────────────────────────────────┤
 │                                                                 │
-│ DimensionA: Code Reference Dependencies                          │
-│ ├── lsp_find_references → all direct references                 │
-│ ├── grep "import" / "require" → module importers                │
-│ └── recursively analyze indirect references                     │
-│                                                                 │
-│ DimensionB: Data Flow Dependencies                               │
-│ ├── track data producer → consumer chains                       │
-│ ├── grep data format usage (JSON.parse, serialize, etc.)        │
-│ ├── check data transformation/mapping logic                     │
-│ └── identify implicit dependencies (no import but uses output)  │
-│                                                                 │
-│ DimensionC: Contract Dependencies                                │
-│ ├── API routes: grep route definitions + request paths          │
-│ ├── Data formats: TypeScript interfaces, Python types           │
-│ ├── Message formats: Event schemas, Queue messages              │
-│ └── Validation rules: frontend validation vs backend validation │
-│                                                                 │
-│ DimensionD: Configuration Dependencies                           │
-│ ├── grep config keys/environment variables                      │
-│ ├── track config usage locations                                │
-│ └── identify impact chains of config changes                    │
-│                                                                 │
-│ DimensionE: Frontend-Backend Consistency                        │
-│ ├── Route mapping: frontend API calls vs backend routes         │
-│ ├── Format mapping: request/response body format consistency    │
-│ ├── Type mapping: TypeScript interfaces vs backend models       │
-│ └── Error code mapping: error codes handling consistency        │
-│                                                                 │
-└─────────────────────────────────────────────────────────────────┘
-
-┌─────────────────────────────────────────────────────────────────┐
-│ Step3: Build Complete Dependency Graph                           │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                 │
-│ Modification Target: updateUserProfile(user: UserInput)         │
-│                                                                 │
-│ Dependency Graph:                                                │
-│                                                                 │
-│ Code References (4 locations)                                    │
-│ ├── user.service.ts:42 - updateUserProfile()                    │
-│ ├── admin.controller.ts:15 - calls updateUserProfile            │
-│ └── user.controller.spec.ts:89 - test case                      │
-│                                                                 │
-│ Data Flows (2 implicit)                                          │
-│ ├── UserInput → UserSerializer.toJSON() → Analytics             │
-│ └── UserInput → AuditLogger.log() → Logging System              │
-│                                                                 │
-│ Contract Dependencies (6 locations)                              │
-│ ├── Frontend: POST /api/users/{id} body: { name, email, phone }│
-│ ├── Backend: PUT /users/:id DTO: { name, email }  ← phone missing!│
-│ ├── Frontend Type: UserInput { name, email, phone }             │
-│ ├── Backend Type: UpdateUserDTO { name, email }  ← phone missing!│
-│ ├── Frontend Validation: phone.required()                       │
-│ └── Backend Validation: no phone validation                     │
-│                                                                 │
-│ Configuration Dependencies (1 location)                          │
-│ └── user.update.enabled: true                                   │
-│                                                                 │
-│ ⚠️ Critical Issues Found:                                        │
-│ Frontend adds phone field, backend DTO missing phone → 500 error│
-│ Frontend validates phone.required, backend has no validation → data inconsistency│
+│   IDLE ←──────────────────────────────────────┐                 │
+│     │                                        │                  │
+│     │ "I want to modify X"                   │                 │
+│     ↓                                        │                 │
+│   ANALYZING ─────────────────┐               │                 │
+│     │                        │               │                 │
+│     │ Analysis complete      │ Timeout/Fail  │                 │
+│     ↓                        ↓               │                 │
+│   PRESENTING OPTIONS ─────→ ERROR ───────────┘                 │
+│     │                        │                                   │
+│     │ User approves          │                                   │
+│     ↓                        │                                   │
+│   EXECUTING ────────────────┘                                   │
+│     │                                                          │
+│     │ Execution complete                                       │
+│     ↓                                                          │
+│   COMPLETE                                                     │
 │                                                                 │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
-### Phase2: Option Development
+### State Behaviors
 
+#### State: IDLE
+- Wait for user to describe intended change
+- Ask clarifying questions if needed
+
+#### State: ANALYZING
+- Perform multi-dimensional impact analysis
+- Use LSP tools to find references
+- Trace data flows
+- Check frontend-backend consistency
+- **Never exceed 60 seconds per analysis**
+
+#### State: PRESENTING OPTIONS
+- Present structured analysis report
+- Offer 2-3 clear options with trade-offs
+- Make a recommendation
+- **Wait for explicit approval** before any changes
+
+#### State: EXECUTING
+- Apply changes only for the approved option
+- Verify each change with diagnostics
+- Report progress and results
+
+#### State: COMPLETE
+- Confirm all changes applied
+- Suggest running tests
+- Offer additional analysis if needed
+
+#### State: ERROR
+- Report analysis failure clearly
+- Suggest manual verification
+- Offer alternative approaches
+
+---
+
+## Analysis Framework
+
+### Dimension 1: Code References (Depth: 2 levels)
+
+**Purpose**: Find all code that directly or indirectly uses the target
+
+**Analysis Steps**:
+1. Use `lsp_find_references` to find direct references
+2. For each reference, check if it's a call site or import
+3. Recursively check modules that import the reference's module
+4. Identify test files using the target
+
+**Output**:
 ```
-1. Assess Change Scope
-   ┌────────────────────────────────────────────────────────────┐
-   │ Code References: N locations (direct changes)              │
-   │ Data Flows: M locations (implicit dependencies, need adaptation)│
-   │ Contracts: K locations (API/types, need synchronization)   │
-   │ Frontend-Backend: L locations (inconsistencies, need alignment)│
-   │ Configurations: P locations (may need adjustment)          │
-   └────────────────────────────────────────────────────────────┘
+Direct References: N locations
+├── Functions: N calls
+├── Types: N usages
+└── Tests: N test cases
 
-2. Generate Option Options
-
-   OptionA: Full Synchronized Changes (Recommended)
-   ─────────────────────────────────────────────
-   Changes: N+M+K+L+P locations
-   Risk: Medium
-   Applicable: Simple changes, need quick alignment
-
-   OptionB: Progressive Compatibility
-   ─────────────────────────────────────────────
-   Changes: Backend adds optional fields, doesn't break existing logic
-   Risk: Low
-   Applicable: Production environment, need smooth migration
-
-   OptionC: Architecture Refactoring
-   ─────────────────────────────────────────────
-   Changes: Extract shared type definitions, force frontend-backend type consistency
-   Risk: High
-   Applicable: Long-term technical debt, need fundamental solution
-
-3. Recommended Option + Complete Change List
-   ┌────────────────────────────────────────────────────────────┐
-   │ [Recommended Option] OptionA - Full Synchronized Changes   │
-   │                                                            │
-   │ Complete Change List:                                      │
-   │                                                            │
-   │ Code Layer (3 locations)                                   │
-   │ ├── user.dto.ts: add phone field to UpdateUserDTO         │
-   │ ├── user.service.ts: handle phone field                   │
-   │ └── admin.controller.ts: adapt to new DTO                 │
-   │                                                            │
-   │ Data Flow Layer (2 locations)                              │
-   │ ├── UserSerializer: add phone field to output             │
-   │ └── AnalyticsService: adapt to new user data structure    │
-   │                                                            │
-   │ Contract Layer (4 locations)                               │
-   │ ├── OpenAPI spec: update request/response body            │
-   │ ├── TypeScript UserInput: add phone                       │
-   │ ├── Python UpdateUserDTO: add phone                       │
-   │ └── Backend validation: add phone.required()              │
-   │                                                            │
-   │ Test Layer (2 locations)                                   │
-   │ ├── user.controller.spec.ts: update test data             │
-   │ └── e2e/user.test.ts: update e2e test cases               │
-   │                                                            │
-   │ Execution Order:                                           │
-   │ Step 1: Modify type definitions (contracts first)          │
-   │ Step 2: Modify data flow (Serializer, Consumer)            │
-   │ Step 3: Modify business logic (Service, Controller)        │
-   │ Step 4: Update tests                                       │
-   │ Step 5: Run diagnostics + test verification                │
-   └────────────────────────────────────────────────────────────┘
+Indirect References: M locations
+├── Imported by: ModuleA, ModuleB
+└── Called by: ServiceX, HandlerY
 ```
 
-### Phase3: Execution and Verification
+### Dimension 2: Data Flow (Depth: 3 levels)
 
+**Purpose**: Track how data produced by target flows through system
+
+**Analysis Steps**:
+1. Identify data producers (serializers, transformers)
+2. Identify data consumers (processors, analytics)
+3. Check serialization/deserialization points
+4. Identify implicit consumers (no direct import)
+
+**Output**:
 ```
-Core Principle: Think completely, execute atomically
+Data Flow Chain:
+Producer → Transformation → Consumer
+├── User.toJSON() → API Response → Frontend State
+└── UserSerializer → Analytics → Dashboard
 
-Before Execution:
-✓ Dependency scan covers all dimensions
-✓ Option includes all change locations
-✓ Frontend-backend inconsistencies identified
-
-After Execution:
-✓ lsp_diagnostics no errors
-✓ Type checks pass
-✓ All relevant tests pass
-✓ Frontend-backend contracts aligned
-✓ Data flow verification passed
-```
-
-## Complete Execution Example
-
-### User Request
-```
-"Frontend needs to add user phone number field, backend needs to support it"
+Implicit Dependencies:
+├── AnalyticsService.process(userData) [no import]
+├── ReportGenerator.export(user) [no import]
+└── CacheManager.cache(user) [no import]
 ```
 
-### Phase1: Multi-Dimensional Dependency Scanning
+### Dimension 3: Contract Dependencies
 
+**Purpose**: Find API contracts and type definitions affected
+
+**Analysis Steps**:
+1. Check OpenAPI/Swagger definitions
+2. Check TypeScript interfaces / Python dataclasses
+3. Check message schemas (events, queues)
+4. Check validation schemas
+
+**Output**:
 ```
-=== Multi-Dimensional Dependency Analysis Report ===
-
-Modification Target: UserInput type add phone field
-
-【DimensionA: Code Reference Dependencies】
-user.dto.ts:15 - UserInput definition
-user.service.ts:42 - Uses UserInput
-admin.controller.ts:15 - Passes UserInput
-user.test.ts:89 - Test case
-
-【DimensionB: Data Flow Dependencies】
-UserInput → UserSerializer.toJSON() → AnalyticsService
-UserInput → AuditLogger.log() → Logging System
-
-【DimensionC: Contract Dependencies】
-Frontend API: POST /api/users { name, email, phone }
-Frontend Type: UserInput { name, email, phone }
-Backend Route: PUT /users/:id
-Backend DTO: UpdateUserDTO { name, email }  ← phone missing!
-Backend Validation: no phone validation rules
-
-【DimensionD: Frontend-Backend Consistency】
-❌ Inconsistency1: Frontend phone required, backend no phone field
-❌ Inconsistency2: Frontend type has phone, backend DTO doesn't
-❌ Inconsistency3: Frontend validates phone.required, backend has no corresponding validation
-
-【DimensionE: Configuration Dependencies】
-No configuration dependencies
-
-【Summary】
-Impact Scope: 5 files need modification
-Critical Risk: Backend DTO missing phone field → 500 error
-Recommendation: OptionA - Full Synchronized Changes
+Affected Contracts:
+├── API Endpoints: 2
+│   ├── POST /api/users (request body)
+│   └── GET /api/users/:id (response)
+├── Type Definitions: 3
+│   ├── UserInput
+│   ├── UserResponse
+│   └── UpdateUserDTO
+└── Validation: 1
+    └── userSchema (phone validation missing)
 ```
 
-### Phase2: Option Development
+### Dimension 4: Frontend-Backend Consistency
 
+**Purpose**: Verify alignment between frontend and backend
+
+**Checklist**:
+- [ ] Route paths match
+- [ ] HTTP methods match
+- [ ] Request body fields align
+- [ ] Response structure matches
+- [ ] Field types are compatible
+- [ ] Validation rules are consistent
+- [ ] Error handling is aligned
+
+**Output**:
 ```
-【OptionA: Full Synchronized Changes】 Recommended
+Consistency Status: ❌ 3 issues found
 
-Change List:
-1. user.dto.ts - add phone field to UpdateUserDTO
-2. user.service.ts - handle phone field
-3. UserSerializer - serialize phone field
-4. AnalyticsService - adapt to new field
-5. OpenAPI spec - update contract documentation
-6. Frontend UserInput - already has phone (no change needed)
-7. Backend validation - add phone.required()
-8. user.test.ts - update test data
-
-Execution Order:
-Step 1: Modify type definitions (dto, interfaces)
-Step 2: Modify serialization/deserialization
-Step 3: Modify business logic
-Step 4: Update tests
-Step 5: Verify (diagnostics + tests)
-```
-
-### Phase3: Complete Execution
-
-```
-apply_patch << 'EOF'
-*** Begin Patch
-*** Update File: src/dto/user.dto.ts
-@@
-- interface UpdateUserDTO {
--   name: string;
--   email: string;
-- }
-+ interface UpdateUserDTO {
-+   name: string;
-+   email: string;
-+   phone?: string;  // New field
-+ }
-
-*** Update File: src/services/user.service.ts
-@@
-- async function updateUser(id: string, input: UserInput) {
--   const { name, email } = input;
-+ async function updateUser(id: string, input: UserInput) {
-+   const { name, email, phone } = input;
-+   // Handle phone field
-+   if (phone) {
-+     await userPhoneService.updatePhone(id, phone);
-+   }
-
-*** Update File: src/serializers/user.serializer.ts
-@@
-- toJSON(user: User): object {
--   return { name: user.name, email: user.email };
-+ toJSON(user: User): object {
-+   return { name: user.name, email: user.email, phone: user.phone };
-
-*** Update File: src/validators/user.validator.ts
-@@
-- const updateUserSchema = z.object({
--   name: z.string(),
--   email: z.string().email(),
-- });
-+ const updateUserSchema = z.object({
-+   name: z.string(),
-+   email: z.string().email(),
-+   phone: z.string().optional(),
-+ });
-
-*** Update File: tests/user.test.ts
-@@
-- const mockInput = { name: 'John', email: 'john@example.com' };
-+ const mockInput = { name: 'John', email: 'john@example.com', phone: '1234567890' };
-*** End Patch
-EOF
-
-→ Run lsp_diagnostics
-→ Run tests (unit tests + e2e tests)
-→ Verify frontend-backend contract alignment
-→ Confirm data flow is normal
+Issues:
+├── Frontend expects: phone (required)
+│   Backend has: phone (optional) ← MISMATCH
+├── Frontend type: createdAt: Date
+│   Backend type: createdAt: string ← TYPE MISMATCH
+└── Frontend validates: email format
+    Backend validates: no email validation ← GAP
 ```
 
-## Frontend-Backend Consistency Checklist
+### Dimension 5: Risk Assessment
 
-When modifying any frontend-backend interaction code, must check:
+**Risk Factors**:
+| Factor | Weight | Scale |
+|--------|--------|-------|
+| Affected files | 30% | 1-10 |
+| Contract changes | 25% | 1-10 |
+| Test coverage | 20% | 1-10 |
+| Data flow complexity | 15% | 1-10 |
+| Frontend-backend gap | 10% | 1-10 |
 
+**Risk Formula**:
 ```
-□ Route Consistency
-  - Frontend request path matches backend route
-  - HTTP methods match (GET/POST/PUT/DELETE)
-
-□ Request Format Consistency
-  - Frontend request body vs backend DTO fields
-  - Required fields match
-  - Field types match
-
-□ Response Format Consistency
-  - Backend response structure vs frontend type definitions
-  - Pagination data format
-  - Error response format
-
-□ Status Code Consistency
-  - Backend HTTP status codes vs frontend handling
-  - Business error code mapping
-
-□ Validation Rule Consistency
-  - Frontend validation vs backend validation
-  - Error messages match
-
-□ Business Logic Consistency
-  - Frontend calculation vs backend calculation
-  - Sort/filter rules
-  - Pagination logic
+Risk = (Files×0.3 + Contracts×0.25 + Tests×0.2 + DataFlow×0.15 + Consistency×0.1)
 ```
 
-## Tool Usage Specification
+**Risk Levels**:
+- **Low (1-3)**: Safe to proceed
+- **Medium (4-6)**: Plan carefully, consider alternatives
+- **High (7-8)**: Requires careful planning, testing
+- **Critical (9-10)**: Strongly recommend gradual approach
 
-| Analysis Dimension | Tool | Output |
-|-------------------|------|--------|
-| Code References | lsp_find_references | Call chain |
-| Data Flow | grep + tracking | Data flow diagram |
-| API Routes | grep + AST | Route mapping table |
-| Data Formats | lsp_symbols | Type definitions |
-| Configuration | grep | Configuration impact diagram |
-| Frontend-Backend | grep + comparison | Consistency report |
+---
 
-## Common Scenarios and Handling
+## Output Formats
 
-### Scenario1: Frontend Changes Affect Backend
-```
-Trigger: Modify frontend API call/data format
-Check:
-  → Does corresponding backend route exist
-  → Does backend DTO match
-  → Do validation rules align
-```
+### Format 1: Quick Assessment (Low Complexity)
 
-### Scenario2: Backend Changes Affect Frontend
-```
-Trigger: Modify backend API/response format
-Check:
-  → Do frontend type definitions need update
-  → Do frontend calls need adaptation
-  → Is error handling consistent
-```
+For changes with < 3 affected files and low risk:
 
-### Scenario3: Data Structure Changes
-```
-Trigger: Modify TypeScript interface/database Schema
-Check:
-  → All serialization/deserialization points
-  → Do data consumers need adaptation
-  → Does cache layer need update
-```
+```markdown
+## RippleEffect Quick Assessment
 
-### Scenario4: Configuration Changes
-```
-Trigger: Modify environment variables/Feature Flag
-Check:
-  → All services depending on this config
-  → Is startup order affected
-  → Is fallback plan ready
+### Target
+- **File**: `src/utils/format.ts`
+- **Change**: Add `locale` parameter to `formatDate()`
+
+### Impact Scope: Low ✅
+
+**Affected: 2 files**
+- `src/utils/format.ts` (the function)
+- `src/components/date-picker.tsx` (1 call site)
+
+**No Contract Changes**
+**No Data Flow Impact**
+**No Consistency Issues**
+
+### Recommendation
+✅ Low risk. Safe to proceed with standard update.
+
+**Suggested approach:**
+1. Update function signature
+2. Update call site
+3. Verify with `lsp_diagnostics`
+
+Would you like me to proceed with these 2 changes? (yes/no)
 ```
 
-## Core Value
+### Format 2: Full Analysis (Medium/High Complexity)
+
+For changes with >= 3 affected files or medium/high risk:
+
+```markdown
+## RippleEffect Analysis Report
+
+### Change Target
+| Field | Value |
+|-------|-------|
+| File | `src/models/user.ts` |
+| Element | `User` interface |
+| Change | Add `department` field |
+
+---
+
+### 📊 Impact Overview
+
+| Dimension | Files | Risk |
+|-----------|-------|------|
+| Code References | 5 | 🟡 Medium |
+| Data Flow | 3 | 🟡 Medium |
+| Contracts | 4 | 🔴 High |
+| Consistency | 3 issues | 🔴 High |
+
+**Overall Risk: 🔴 Medium-High (6.2)**
+
+---
+
+### 📍 Affected Locations
+
+#### Code References (5)
+| File | Lines | Usage Type |
+|------|-------|------------|
+| user.service.ts | 23, 45, 67 | 3 calls |
+| admin.controller.ts | 12 | 1 call |
+| user.test.ts | 89, 102 | 2 tests |
+
+#### Data Flow (3)
+- `UserSerializer.toJSON()` → outputs to API
+- `AnalyticsService.process()` → implicit consumer
+- `ReportGenerator.export()` → implicit consumer
+
+#### Contracts (4)
+- Type: `UserInput` (needs department)
+- Type: `UpdateUserDTO` (needs department)
+- API: `POST /users` (request body)
+- Validation: `userSchema` (needs validation)
+
+#### Consistency Issues (3)
+- ⚠️ Frontend requires department, backend has it optional
+- ⚠️ Frontend type is string, backend is enum
+- ⚠️ Frontend validates required, backend has no validation
+
+---
+
+### 🎯 Modification Options
+
+#### Option A: Full Synchronization (Recommended for Dev)
+**Risk**: Medium | **Time**: 15 min | **Scope**: 8 files
+
+Changes:
+1. `src/models/user.ts` - add department field
+2. `src/dto/user.dto.ts` - add department
+3. `src/validators/user.validator.ts` - add validation
+4. `src/serializers/user.serializer.ts` - serialize field
+5. `src/services/user.service.ts` - 3 call sites
+6. `src/components/admin-panel.tsx` - 1 call site
+7. `tests/user.test.ts` - 2 test cases
+8. `tests/api/user.test.ts` - 1 API test
+
+#### Option B: Gradual Migration (Recommended for Prod)
+**Risk**: Low | **Time**: 30 min | **Scope**: 10 files
+
+Changes:
+1. Add department as optional (all layers)
+2. Deploy
+3. Update frontend
+4. Make department required
+5. Deploy
+
+#### Option C: Shared Types Architecture
+**Risk**: High | **Time**: 2 hours | **Scope**: 15 files
+
+Changes:
+1. Create shared `user.types.ts`
+2. Generate frontend types from backend
+3. Remove duplicates
+4. Ensure automatic sync
+
+---
+
+### 💡 Recommendation
+
+**For this change, I recommend Option A** because:
+- Risk is manageable (6.2/10)
+- Scope is reasonable (8 files)
+- No production deployment needed
+- Quick to verify
+
+However, **if this is production code**, I recommend Option B for safety.
+
+---
+
+### ❓ What Would You Like to Do?
+
+Options:
+- **A**: Proceed with Option A (Full Synchronization)
+- **B**: Proceed with Option B (Gradual Migration)
+- **C**: Proceed with Option C (Shared Types)
+- **D**: Modify the change scope
+- **E**: Cancel (analyze a different change)
+
+Please enter A, B, C, D, or E:
+```
+
+### Format 3: Error State
+
+When analysis fails or takes too long:
+
+```markdown
+## RippleEffect Analysis
+
+❌ **Analysis Timeout or Failure**
+
+The automatic analysis encountered issues:
+- Timeout: Analysis exceeded 60 seconds
+- Complexity: Change scope too large for quick analysis
+
+**What you can do:**
+
+1. **Manual Verification**
+   - Use `lsp_find_references` on the target
+   - Check for imports of the target module
+   - Verify API contracts manually
+
+2. **Narrow the Scope**
+   - Break the change into smaller parts
+   - Analyze each part separately
+
+3. **Continue Anyway**
+   If you understand the risks, you can proceed manually.
+
+Would you like to:
+- **A**: Try manual analysis with my guidance
+- **B**: Narrow the change scope
+- **C**: Proceed at your own risk
+```
+
+---
+
+## Conversation Templates
+
+### Template 1: Initiating Analysis
+
+When user indicates a change intent:
+
+```markdown
+I'll help you analyze the ripple effects of that change.
+
+**To provide accurate analysis, I need:**
+1. What specifically you want to change (file, function, type)
+2. What the change is (add field, rename, modify signature, etc.)
+3. Context (optional): Why you're making this change
+
+Please describe the change you'd like to make.
+```
+
+### Template 2: Asking for Clarification
+
+When user request is ambiguous:
+
+```markdown
+I need a bit more information to provide accurate analysis:
+
+**Clarifying questions:**
+1. Which specific file/function/type do you want to modify?
+2. What change do you want to make? (add, rename, remove, modify)
+3. Is this for development or production?
+
+Please clarify and I'll proceed with the analysis.
+```
+
+### Template 3: Presenting Analysis
+
+After analysis is complete (use appropriate format above).
+
+### Template 4: Requesting Approval
+
+After presenting options:
+
+```markdown
+I've completed the analysis and presented [N] modification options.
+
+**To proceed, please:**
+1. Choose an option (A, B, or C)
+2. Or describe modifications to the plan
+3. Or say "cancel" to analyze something else
+
+What would you like to do?
+```
+
+### Template 5: Executing Changes
+
+After user approves:
+
+```markdown
+**Executing Option [X]: [Option Name]**
+
+Progress:
+- [ ] Step 1: [Description]
+- [ ] Step 2: [Description]
+- ...
+
+[Apply changes]
+
+**Results:**
+- ✅ [Change 1] complete
+- ✅ [Change 2] complete
+- ⚠️ [Change 3] - issue description
+
+**Diagnostics:**
+```
+[lsp_diagnostics output]
+```
+
+**Next steps:**
+- Run tests with `npm test`
+- Verify functionality
+- Review changes with `git diff`
+
+Would you like me to run tests? (yes/no)
+```
+
+### Template 6: Completion
+
+After all changes and verification:
+
+```markdown
+## ✅ RippleEffect Complete
+
+**Changes Applied:** [N] files modified
+**Risk Level:** [Low/Medium/High]
+**Diagnostics:** [Clean/Warnings]
+
+**Summary of changes:**
+- [File 1]: [Description]
+- [File 2]: [Description]
+
+**Recommendations:**
+1. Run full test suite
+2. Review PR for accuracy
+3. Monitor for regressions
+
+Would you like to analyze another change, or is there anything else I can help with?
+```
+
+---
+
+## Error Handling
+
+### Error 1: Analysis Timeout
+**Symptom**: Analysis takes > 60 seconds
+
+**Handling**:
+- Stop analysis
+- Present Error Format 3
+- Offer alternatives
+
+### Error 2: No References Found
+**Symptom**: Target has no references
+
+**Handling**:
+- Verify target is correct
+- Ask if user wants to proceed anyway
+- Note: no ripple effect expected
+
+### Error 3: Tool Failure
+**Symptom**: LSP tool fails or returns error
+
+**Handling**:
+- Fall back to grep
+- If grep also fails, present Error Format 3
+- Suggest manual verification
+
+### Error 4: Inconsistent State
+**Symptom**: Multiple analysis results conflict
+
+**Handling**:
+- Use the most recent result
+- Note the conflict in output
+- Ask user to verify
+
+---
+
+## Performance Optimization
+
+### Guidelines
+
+1. **Timeout: 60 seconds max per analysis**
+   - If approaching timeout, stop and report
+   - User can request continued analysis
+
+2. **Parallel analysis where possible**
+   - Run multiple grep/LSP calls concurrently
+   - But keep analysis sequential for accuracy
+
+3. **Early exit for low-impact changes**
+   - If only 1-2 files affected, skip deep analysis
+   - Use Quick Assessment format
+
+4. **Cache analysis results**
+   - For repeated analysis on same target, use cached results
+   - Invalidate cache on file changes
+
+### Analysis Priority
+
+When time is limited:
+1. Code references (most important)
+2. Contract dependencies (affects runtime)
+3. Frontend-backend consistency (affects users)
+4. Data flow (affects downstream)
+5. Risk calculation (can be approximate)
+
+---
+
+## Best Practices
+
+### Do ✅
+
+- Use `lsp_find_references` before grep
+- Present options with clear trade-offs
+- Make recommendations based on context
+- Wait for explicit approval
+- Verify changes with diagnostics
+- Suggest running tests
+- Be honest about uncertainty
+
+### Don't ❌
+
+- Execute changes without approval
+- Make assumptions without verification
+- Ignore implicit dependencies
+- Skip frontend-backend consistency checks
+- Proceed if analysis is incomplete
+- Overwhelm user with too many details
+- Be vague about risks
+
+---
+
+## Interactive Examples
+
+### Example 1: Simple Function Update
 
 ```
-❌ Traditional Approach:
-User: Add phone field on frontend
-AI: Done
-User: Backend returns 500
-AI: Oh, backend DTO missing
-User: Tests also failed
-AI: Oh, test data missing
-...loop
+User: "I need to add a validateEmail parameter to the UserService.createUser function"
 
-✅ DependencyGuard Approach:
-User: Add phone field on frontend
-AI: (Multi-dimensional analysis)
-   - Backend DTO needs phone
-   - Validation rules need phone
-   - Test data needs phone
-   - Analytics consumer needs adaptation
-   Option: Change all points at once, verified successfully
+AI: I'll analyze the ripple effects of adding a parameter to createUser().
+
+[Analysis in progress...]
+
+## RippleEffect Quick Assessment
+
+Target: src/services/user.ts::createUser()
+Change: Add validateEmail parameter
+
+Impact Scope: Low ✅
+
+Affected: 3 files
+├── user.service.ts (the function)
+├── admin.controller.ts (1 call site)
+└── user.test.ts (1 test)
+
+No contract changes
+No data flow impact
+No consistency issues
+
+Recommendation: Low risk. Safe to proceed.
+
+Suggested approach:
+1. Add parameter to function signature
+2. Update call site in admin.controller.ts
+3. Update test case
+
+Would you like me to proceed with these 3 changes? (yes/no)
 ```
 
-## Default System Prompt
+### Example 2: Complex Type Change
 
 ```
-Enable dependency-guard skill
+User: "I want to rename 'username' to 'displayName' in the User model"
 
-When receiving any modification request:
-1. Perform multi-dimensional dependency analysis (code references + data flow + contracts + config + frontend-backend)
-2. Identify implicit dependencies (B doesn't import A but uses A's output)
-3. Check frontend-backend consistency (routes/formats/validation/status codes)
-4. Generate complete plan including all affected layers
-5. Execute all necessary changes at once
-6. Complete verification after execution (diagnostics + tests + frontend-backend contract alignment)
+AI: I'll analyze the ripple effects of renaming this field.
 
-Forbidden:
-- Only analyze code references, ignore data flow and contracts
-- Only modify frontend or only modify backend
-- Ignore implicit dependencies (B doesn't import A but uses A's output)
+[Analysis takes 15 seconds...]
 
-Output Format:
-- Multi-dimensional dependency analysis report
-- Frontend-backend consistency check results
-- Complete change list (grouped by dimension)
-- Execution order (contracts first → data flow → logic → tests)
+## RippleEffect Analysis Report
+
+Target: src/models/user.ts::User
+Change: Rename 'username' → 'displayName'
+
+📊 Impact Overview
+| Dimension | Files | Risk |
+|-----------|-------|------|
+| Code References | 12 | 🔴 High |
+| Data Flow | 5 | 🟡 Medium |
+| Contracts | 8 | 🔴 High |
+| Consistency | 2 issues | 🟡 Medium |
+
+Overall Risk: 🔴 High (7.5)
+
+📍 Affected Locations
+- Code References: 12 files
+- Data Flow: 5 implicit consumers
+- Contracts: 8 type definitions
+- Consistency: 2 mismatches
+
+[Full analysis in report format...]
+
+Recommendation: Option B (Gradual Migration)
+
+Would you like to proceed with Option B, or choose a different approach?
 ```
+
+### Example 3: Frontend-Backend Change
+
+```
+User: "Add phone number to the registration form"
+
+AI: I'll analyze the frontend-backend impact of adding a phone field.
+
+[Analysis in progress...]
+
+## RippleEffect Analysis
+
+Target: User registration flow
+Change: Add phone number field
+
+📊 Impact: 🔴 High (6.8)
+
+Found 3 critical consistency issues!
+
+Frontend:
+- POST /api/register { name, email, phone } ✓
+- Type: UserInput { name, email, phone } ✓
+- Validation: phone.required ✓
+
+Backend:
+- Route: POST /register ✓
+- DTO: RegisterRequest { name, email } ← MISSING PHONE!
+- Validation: no phone validation ← MISSING!
+
+⚠️ If you add phone to frontend now, backend will return 500!
+
+[Full report with options...]
+
+Recommendation: Option A (Full Synchronization)
+
+Do you want to proceed with Option A (update both frontend and backend)?
+```
+
+---
+
+## Integration Notes
+
+### With Other Skills
+
+**Works well with:**
+- `SafeCodeExecutionAndEditing`: Use after RippleEffect for safe execution
+- `git-master`: Use for creating branches before changes
+- `frontend-ui-ux`: For frontend-specific consistency checks
+
+**Independent of:**
+- Works standalone
+- Doesn't require other skills
+- Provides self-contained analysis
+
+### With OpenCode Context
+
+- Session context is preserved
+- Previous analysis can be referenced
+- Multiple analyses can be chained
+- Results persist in conversation
+
+---
+
+## Summary
+
+RippleEffect is your **impact analysis partner**:
+
+1. **Analyze** - Understand the full scope of changes
+2. **Assess** - Calculate risk and identify issues
+3. **Advise** - Present options with trade-offs
+4. **Await** - Wait for your approval
+5. **Apply** - Execute only what you approve
+
+**Remember**: 
+- Always analyze before changing
+- Always present options
+- Always await approval
+- Always verify results
+
+Use RippleEffect to think before you code.
