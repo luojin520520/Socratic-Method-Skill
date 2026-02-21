@@ -1,0 +1,5 @@
+---
+interface:
+  display_name: "Socratic-Method Skill"
+  short_description: "全景理解项目后再提供多方案涟漪分析，附解决方案与检查点，等你确认后再改。"
+  default_prompt: "在修改代码前先构建项目架构速览；找出依赖、契约和数据流；为每个影响项给出具体修复方案；列出 2-3 个选项和权衡，并坚持等用户确认后才执行。"
